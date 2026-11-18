@@ -1,0 +1,92 @@
+.container {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  overflow-y: auto;
+}
+
+.welcome {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 704px;
+  margin: auto;
+  padding: 32px;
+}
+
+.intro {
+  margin-bottom: clamp(24px, 6vh, 56px);
+}
+
+.intro p {
+  margin: 10px 0 0;
+  color: var(--remember-muted);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.greeting {
+  margin: 0;
+  font-size: clamp(32px, 5vw, 54px);
+  line-height: 1.2;
+  font-weight: 650;
+  letter-spacing: -0.045em;
+}
+
+.caveat {
+  padding: 8px 0;
+  font-size: 11px;
+  text-align: center;
+  color: var(--remember-muted);
+}
+
+@media (max-width: 767px) {
+  .welcome {
+    margin: auto auto 0;
+    padding: 20px 14px env(safe-area-inset-bottom);
+    min-height: 100%;
+    justify-content: flex-end;
+  }
+
+  .intro {
+    margin: auto 0;
+    padding: 24px 4px;
+  }
+}
+
+@media (max-height: 480px) and (max-width: 767px) {
+  .intro {
+    padding: 4px 0 12px;
+  }
+  .greeting {
+    font-size: 24px;
+  }
+  .intro p {
+    display: none;
+  }
+}
+
+.intro {
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.welcome {
+  min-height: 100%;
+  justify-content: center;
+}
+
+.intro {
+  margin-top: auto;
+}
+
+.welcome > :nth-child(3) {
+  margin-top: auto;
+}
+
+.greeting { font-family: Georgia, 'Noto Serif SC', 'Source Han Serif SC', serif; font-weight: 500; }
+
+@media (max-width: 767px) {
+  .welcome { padding-bottom: max(env(safe-area-inset-bottom), var(--native-bottom, 0px)); }
+}

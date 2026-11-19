@@ -18,7 +18,8 @@ export const en = {
   rememberHistory: 'Chat history',
   rememberRoles: 'Roles',
   rememberMemory: 'Memory',
-  appName: 'Remember',
+  appName: 'Memory',
+  historyOlderTitle: 'Older conversations',
   deleteSessionModalContentTitle: 'Delete chat?',
   deleteSessionWithFilesDescription:
     'This chat and its uploaded files will be permanently deleted and cannot be recovered. Delete this chat?',

@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useAnchoredPosition, useDismiss } from './anchored.js'
 import { IconCheckOutline16, IconChevronDownOutline14 } from './icons.js'
@@ -29,6 +29,19 @@ export const Select = <T extends string>({
   disabled?: boolean
 }) => {
   const [open, setOpen] = useState(false)
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+    const back = (event: Event) => {
+      if (!event.defaultPrevented) {
+        event.preventDefault()
+        setOpen(false)
+      }
+    }
+    window.addEventListener('remember-back', back, true)
+    return () => window.removeEventListener('remember-back', back, true)
+  }, [open])
   const current = options.find((option) => option.value === value)
   // 菜单贴右侧展开，最多 320px 高，超出在菜单内滚动
   const { anchorRef, floatingRef, position } = useAnchoredPosition<
@@ -69,7 +82,8 @@ export const Select = <T extends string>({
               aria-label={ariaLabel}
             >
               {options.map((option) => (
-                <div
+                <button
+                  type="button"
                   key={option.value}
                   role="option"
                   lang={option.lang}
@@ -82,7 +96,7 @@ export const Select = <T extends string>({
                 >
                   <span>{option.label}</span>
                   {option.value === value ? <IconCheckOutline16 /> : null}
-                </div>
+                </button>
               ))}
             </div>,
             document.body

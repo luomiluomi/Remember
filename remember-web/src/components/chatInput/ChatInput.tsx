@@ -49,6 +49,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
   const streaming = useChatStore(
     (state) => sessionId !== null && Object.hasOwn(state.streaming, sessionId)
   )
+  const enterToSend = useSettings((state) => state.enterToSend)
   const thinking = useSettings((state) => state.thinking)
   const importingHistory = useChatStore((state) => state.importingHistory)
   const isMobile = useIsMobile()
@@ -245,7 +246,12 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
             }
           }}
           onKeyDown={(event) => {
-            if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+            if (
+              event.key === 'Enter' &&
+              enterToSend &&
+              !event.shiftKey &&
+              !event.nativeEvent.isComposing
+            ) {
               event.preventDefault()
               send()
             }

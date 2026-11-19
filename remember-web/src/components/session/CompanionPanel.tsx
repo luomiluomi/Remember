@@ -1,7 +1,10 @@
+import { VersionHistoryPage } from './VersionHistoryPage.js'
+import { RoleEditorFields } from './RoleEditorFields.js'
+import { MemoryDetail } from './MemoryDetail.js'
+import { Select } from '../base/Select.js'
 import { AboutPage } from './AboutPage.js'
 import { DistillPage } from './DistillPage.js'
 import { RoleSelect, RoleAvatar } from './RoleSelect.js'
-import { readAvatar } from './ProfileSetting.js'
 import { IconButton } from '../base/IconButton.js'
 import { IconMenuOutline20, IconNewChatOutline20 } from '../base/icons.js'
 import { useSettings, setAutoRead } from '../../services/settings.js'
@@ -56,7 +59,11 @@ export function CompanionPanel({
     const onRoute = () => {
       const route = location.hash.slice(1)
       const valid =
-        route === 'roles' || route === 'memory' || route === 'distill' || route === 'about'
+        route === 'roles' ||
+        route === 'memory' ||
+        route === 'distill' ||
+        route === 'about' ||
+        route === 'versions'
       setPageOpen(valid)
       if (valid) {
         setPage(route)
@@ -74,13 +81,16 @@ export function CompanionPanel({
     action()
   }
   const [roleEditor, setRoleEditor] = useState(false)
+  const [memoryDetail, setMemoryDetail] = useState<string | null>(null)
   useEffect(() => {
     const back = (event: Event) => {
       if (!pageOpen || event.defaultPrevented) {
         return
       }
       event.preventDefault()
-      if (roleEditor) {
+      if (memoryDetail) {
+        setMemoryDetail(null)
+      } else if (roleEditor) {
         setRoleEditor(false)
       } else {
         closePage()
@@ -88,9 +98,10 @@ export function CompanionPanel({
     }
     window.addEventListener('remember-back', back)
     return () => window.removeEventListener('remember-back', back)
-  }, [pageOpen, roleEditor])
-  const [page, setPage] = useState<'roles' | 'memory' | 'distill' | 'about'>('roles')
+  }, [pageOpen, roleEditor, memoryDetail])
+  const [page, setPage] = useState<'roles' | 'memory' | 'distill' | 'about' | 'versions'>('roles')
   const [selected, setSelected] = useState(basic.id)
+  const [memoryCategory, setMemoryCategory] = useState<(typeof categories)[number]>(categories[0])
   const [editing, edit] = useState<Role>(basic)
   const current = roles.find((role) => role.id === roleId) ?? basic
   const open = (next: typeof page) => {
@@ -107,7 +118,7 @@ export function CompanionPanel({
   }
   useEffect(() => {
     const listener = (event: Event) =>
-      open((event as CustomEvent<'roles' | 'memory' | 'distill' | 'about'>).detail)
+      open((event as CustomEvent<'roles' | 'memory' | 'distill' | 'about' | 'versions'>).detail)
     window.addEventListener('remember-panel', listener)
     return () => window.removeEventListener('remember-panel', listener)
   })
@@ -182,13 +193,17 @@ export function CompanionPanel({
         <section
           className="remember-dialog remember-management-page"
           aria-label={
-            page === 'about'
-              ? '关于记得'
-              : page === 'roles'
-                ? '角色卡'
-                : page === 'memory'
-                  ? '记忆卡'
-                  : '会话提炼'
+            page === 'versions'
+              ? '版本更新记录'
+              : page === 'about'
+                ? '关于记得'
+                : page === 'roles'
+                  ? roleEditor
+                    ? '角色设置'
+                    : '角色卡'
+                  : page === 'memory'
+                    ? '记忆卡'
+                    : '会话提炼'
           }
         >
           <header>
@@ -201,13 +216,17 @@ export function CompanionPanel({
               ‹
             </button>
             <strong>
-              {page === 'about'
-                ? '关于记得'
-                : page === 'roles'
-                  ? '角色卡'
-                  : page === 'memory'
-                    ? '记忆卡'
-                    : '会话提炼'}
+              {page === 'versions'
+                ? '版本更新记录'
+                : page === 'about'
+                  ? '关于记得'
+                  : page === 'roles'
+                    ? roleEditor
+                      ? '角色设置'
+                      : '角色卡'
+                    : page === 'memory'
+                      ? '记忆卡'
+                      : '会话提炼'}
             </strong>
             <span className="remember-page-spacer" />
           </header>
@@ -271,13 +290,16 @@ export function CompanionPanel({
               </button>
             </div>
           )}
-          {page === 'about' ? (
+          {page === 'versions' ? (
+            <VersionHistoryPage />
+          ) : page === 'about' ? (
             <AboutPage />
           ) : page === 'distill' ? (
             <DistillPage />
           ) : page === 'roles' ? (
             roleEditor ? (
               <form
+                className="memory-role-editor"
                 onSubmit={(e) => {
                   e.preventDefault()
                   if (!editing.name.trim()) {
@@ -305,90 +327,13 @@ export function CompanionPanel({
                   }
                 }}
               >
-                <button type="button" onClick={() => setRoleEditor(false)}>
-                  返回角色卡
-                </button>
-                {editing.id === basic.id ? (
-                  <div className="remember-default-role">
-                    <RoleAvatar role={basic} />
-                    <h2>DeepSeek</h2>
-                    <p>
-                      官方基础角色，无自定义人设。
-                      <br />
-                      可以开启自动记忆，让日常交流留下长期记忆。
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    <label>
-                      名称{' '}
-                      <input
-                        required
-                        maxLength={40}
-                        value={editing.name}
-                        onChange={(e) => edit({ ...editing, name: e.target.value })}
-                      />
-                    </label>
-                    <label>
-                      性别（选填）{' '}
-                      <input
-                        maxLength={30}
-                        value={editing.gender}
-                        onChange={(e) => edit({ ...editing, gender: e.target.value })}
-                      />
-                    </label>
-                    <label>
-                      人设提示词{' '}
-                      <textarea
-                        rows={4}
-                        maxLength={3000}
-                        value={editing.prompt}
-                        onChange={(e) => edit({ ...editing, prompt: e.target.value })}
-                      />
-                    </label>
-                    <label>
-                      本地头像（PNG、JPEG、WebP，5 MB 以内）{' '}
-                      <input
-                        type="file"
-                        accept="image/png,image/jpeg,image/webp"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0]
-                          if (!file) {
-                            return
-                          }
-                          const roleId = editing.id
-                          void readAvatar(file)
-                            .then((avatar) => {
-                              edit((previous) =>
-                                previous.id === roleId ? { ...previous, avatar } : previous
-                              )
-                            })
-                            .catch((error) =>
-                              showToast(error instanceof Error ? error.message : '头像读取失败。')
-                            )
-                        }}
-                      />
-                    </label>
-                    {editing.avatar && (
-                      <button type="button" onClick={() => edit({ ...editing, avatar: '' })}>
-                        移除头像
-                      </button>
-                    )}
-                  </>
-                )}
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={editing.auto}
-                    onChange={(e) => edit({ ...editing, auto: e.target.checked })}
-                  />{' '}
-                  自动记忆
-                </label>
-                <p>
-                  开启后，成功发送的文字可能额外提交给 DeepSeek 提取记忆，并产生 API
-                  费用。提取用户明确表达的长期信息，按角色保存并用于后续对话，可随时停用或删除。
-                </p>
-                <button type="submit">保存角色</button>
+                <RoleEditorFields role={editing} onChange={edit} />
+                <div className="memory-form-footer">
+                  <button type="button" onClick={() => setRoleEditor(false)}>
+                    取消
+                  </button>
+                  <button type="submit">保存角色</button>
+                </div>
               </form>
             ) : null
           ) : (
@@ -399,6 +344,9 @@ export function CompanionPanel({
                   : jobs[selected] === 'error'
                     ? '上次自动提取失败，聊天已保存。后续对话会继续尝试。'
                     : '记忆只会用于当前角色。'}
+              </p>
+              <p className="remember-cost-note">
+                自动整理与按维度检索会额外使用 DeepSeek API 额度，可在角色设置中管理自动记忆。
               </p>
               <details className="remember-add-memory">
                 <summary>＋ 添加记忆</summary>
@@ -427,18 +375,20 @@ export function CompanionPanel({
                     event.currentTarget.reset()
                   }}
                 >
-                  <label>
-                    新增记忆
-                    <select name="category">
-                      {categories.map((category) => (
-                        <option key={category}>{category}</option>
-                      ))}
-                    </select>
-                  </label>
+                  <div className="remember-memory-category">
+                    <span>记忆维度</span>
+                    <input type="hidden" name="category" value={memoryCategory} />
+                    <Select
+                      value={memoryCategory}
+                      onChange={setMemoryCategory}
+                      ariaLabel="记忆维度"
+                      options={categories.map((category) => ({ value: category, label: category }))}
+                    />
+                  </div>
                   <textarea
                     name="memory"
                     aria-label="新记忆内容"
-                    maxLength={160}
+                    maxLength={800}
                     required
                     placeholder="值得这个角色记住的事…"
                   />
@@ -463,77 +413,19 @@ export function CompanionPanel({
                     <div key={category}>
                       <h3>{category}</h3>
                       {group.map((card) => (
-                        <details className="remember-memory-card" key={card.id}>
-                          <summary>
-                            <span className="remember-memory-meta">
-                              {category} · {card.active ? '已启用' : '已停用'}
-                            </span>
-                            <p>{card.text}</p>
-                            <small>查看与编辑 ›</small>
-                          </summary>
-                          <form
-                            onSubmit={(e) => {
-                              e.preventDefault()
-                              const text = String(
-                                new FormData(e.currentTarget).get('text') ?? ''
-                              ).trim()
-                              if (text) {
-                                useCompanion.setState((s) => ({
-                                  cards: s.cards.map((c) =>
-                                    c.id === card.id ? { ...c, text } : c
-                                  ),
-                                }))
-                              }
-                            }}
-                          >
-                            <div className="remember-memory-meta">
-                              <span>{category}</span>
-                              <span>{card.active ? '已启用' : '已停用'}</span>
-                            </div>
-                            <textarea
-                              aria-label={category + '记忆内容'}
-                              name="text"
-                              defaultValue={card.text}
-                              maxLength={160}
-                              required
-                            />
-                            {card.createdAt && (
-                              <small>
-                                {new Date(card.createdAt).toLocaleDateString()} ·{' '}
-                                {card.sourceQuote ? '来自对话' : '手动记忆'}
-                              </small>
-                            )}
-                            {card.sourceQuote && (
-                              <details>
-                                <summary>来源原文</summary>
-                                <p>{card.sourceQuote}</p>
-                              </details>
-                            )}
-                            <button type="submit">保存文字</button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                useCompanion.setState((s) => ({
-                                  cards: s.cards.map((c) =>
-                                    c.id === card.id ? { ...c, active: !c.active } : c
-                                  ),
-                                }))
-                              }
-                            >
-                              {card.active ? '停用' : '启用'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                useCompanion.setState((s) => ({
-                                  cards: s.cards.filter((c) => c.id !== card.id),
-                                }))
-                              }
-                            >
-                              删除
-                            </button>
-                          </form>
-                        </details>
+                        <button
+                          type="button"
+                          className="remember-memory-card remember-memory-preview"
+                          data-category={card.category}
+                          key={card.id}
+                          onClick={() => setMemoryDetail(card.id)}
+                        >
+                          <span className="remember-memory-meta">
+                            {category} · {card.active ? '已启用' : '已停用'}
+                          </span>
+                          <p>{card.text}</p>
+                          <small>查看详情 ›</small>
+                        </button>
                       ))}
                     </div>
                   )
@@ -543,6 +435,7 @@ export function CompanionPanel({
           )}
         </section>
       )}
+      {memoryDetail && <MemoryDetail id={memoryDetail} onClose={() => setMemoryDetail(null)} />}
     </header>
   )
 }

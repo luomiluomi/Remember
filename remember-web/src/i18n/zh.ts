@@ -16,6 +16,7 @@ export const zh = {
   rememberRoles: '角色',
   rememberMemory: '记忆',
   appName: '记得',
+  historyOlderTitle: '30 天前的对话',
   deleteSessionModalContentTitle: '永久删除对话',
   deleteSessionWithFilesDescription: '删除后，该对话及其中上传的文件将不可恢复。确认删除吗？',
   cancel: '取消',

@@ -10,7 +10,7 @@ export function AboutPage() {
       <img className="remember-studio-art" src={studio} alt="听岚 studio，金色山峰与云海" />
       <div className="remember-about-identity">
         <h1>
-          记得 <span>Remember</span>
+          记得 <span>Memory</span>
         </h1>
         <p>听岚工作室·吟游诗人洛米鸡</p>
         <small>版本 {appVersion}</small>

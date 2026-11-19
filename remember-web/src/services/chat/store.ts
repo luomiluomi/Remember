@@ -1,3 +1,4 @@
+import { compressContext } from './contextSummary.js'
 import { create } from 'zustand'
 import { toggleReadAloud, describeReadAloudError } from '../speech/readAloud.js'
 import {
@@ -1035,7 +1036,7 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
               prepared.question.content,
               controller.signal
             ),
-            messages,
+            messages: await compressContext(sessionId, messages, controller.signal),
             thinking: { type: initial.thinking ? 'enabled' : 'disabled' },
             safety_check: SAFETY_CHECK,
             tools: serverTools(initial.search ?? false),

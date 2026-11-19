@@ -60,7 +60,7 @@ export function DistillPage() {
     }))
     cancel.current = false
     setBusy(true)
-    const before = new Set(useCompanion.getState().cards.map((card) => card.id))
+    const before = new Map(useCompanion.getState().cards.map((card) => [card.id, card.text]))
     let processed = current?.next ?? 0
     try {
       for (const chunk of chunks.slice(processed)) {
@@ -84,7 +84,15 @@ export function DistillPage() {
       }
       const count = useCompanion
         .getState()
-        .cards.filter((card) => card.roleId === roleId && !before.has(card.id)).length
+        .cards.filter((card) => card.roleId === roleId && before.get(card.id) !== card.text).length
+      if (!cancel.current && count === 0) {
+        useCompanion.setState((state) => ({
+          distillations: { ...state.distillations, [session.id]: { roleId, next: 0, done: false } },
+        }))
+        throw new Error(
+          '本次未发现可确认的新信息，也未更新已有记忆。未标记完成，可重试；仅提取用户文本，重复或不确定的事实会跳过。'
+        )
+      }
       if (!cancel.current) {
         useCompanion.setState((state) => ({
           distillations: {
@@ -118,7 +126,7 @@ export function DistillPage() {
       <p>
         提炼当前分支中用户明确说过的事实，按维度保存到所选角色。现有记忆会保留，重复文本会跳过。
       </p>
-      <p>
+      <p className="remember-cost-note">
         当前需要 {chunks.length} 次提取请求，会调用 DeepSeek 并产生费用。附件内容和 AI
         的回答不用于生成用户事实。
       </p>

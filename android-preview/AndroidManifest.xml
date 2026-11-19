@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="app.remember.preview" android:versionCode="22" android:versionName="0.3.8-preview">
+    package="app.remember.preview" android:versionCode="31" android:versionName="0.3.17-preview">
     <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="34" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -9,11 +9,16 @@
         <activity android:name=".PreviewActivity" android:exported="true"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:windowSoftInputMode="adjustResize">
+        </activity>
+        <activity-alias android:name=".LauncherRemember" android:targetActivity=".PreviewActivity" android:enabled="true" android:exported="true" android:label="记得" android:icon="@drawable/remember_supplied">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias>
+        <activity-alias android:name=".LauncherMemory" android:targetActivity=".PreviewActivity" android:enabled="false" android:exported="true" android:label="Memory" android:icon="@drawable/memory_alternative">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
     </application>
 </manifest>
 

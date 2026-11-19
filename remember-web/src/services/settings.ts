@@ -18,6 +18,8 @@ type Settings = {
   ttsVoice: TtsVoice
   thinking: boolean
   autoRead: boolean
+  enterToSend: boolean
+  chatFontSize: number
   search: boolean
   siderCollapsed: boolean
 }
@@ -99,6 +101,8 @@ export const useSettings = create<Settings>(() => ({
   ttsVoice: initialTtsVoice(),
   thinking: read(KEYS.thinking) === 'true',
   autoRead: read('remember:auto-read') === 'true',
+  enterToSend: read('remember:enter-to-send') !== 'false',
+  chatFontSize: Math.min(24, Math.max(14, Number(read('remember:chat-font-size')) || 16)),
   search: read(KEYS.search) === 'true',
   siderCollapsed: read(KEYS.siderCollapsed) === 'true',
 }))
@@ -121,7 +125,7 @@ export const setThemePreference = (themePreference: ThemePreference) => {
 
 function initialPalette(): Palette {
   const saved = read('remember:palette')
-  return saved && Object.hasOwn(palettes, saved) ? saved as Palette : 'editorial'
+  return saved && Object.hasOwn(palettes, saved) ? (saved as Palette) : 'editorial'
 }
 
 export const setPalette = (palette: Palette) => {
@@ -159,3 +163,24 @@ export const setSiderCollapsed = (siderCollapsed: boolean) => {
   write(KEYS.siderCollapsed, String(siderCollapsed))
   useSettings.setState({ siderCollapsed })
 }
+
+export const setEnterToSend = (enterToSend: boolean) => {
+  write('remember:enter-to-send', String(enterToSend))
+  useSettings.setState({ enterToSend })
+}
+
+export const setChatFontSize = (value: number) => {
+  if (!Number.isFinite(value)) {
+    return
+  }
+  const chatFontSize = Math.min(24, Math.max(14, Math.round(value)))
+  write('remember:chat-font-size', String(chatFontSize))
+  useSettings.setState({ chatFontSize })
+}
+const applyChatFont = () =>
+  document.documentElement.style.setProperty(
+    '--memory-chat-font-size',
+    useSettings.getState().chatFontSize + 'px'
+  )
+applyChatFont()
+useSettings.subscribe(applyChatFont)

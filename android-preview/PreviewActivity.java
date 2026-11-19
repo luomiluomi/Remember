@@ -62,6 +62,7 @@ public final class PreviewActivity extends Activity {
             }
         }, "RememberWindow");
         nativeVoice = new NativeVoice(this);
+        web.addJavascriptInterface(new NativeLauncher(this), "MemoryLauncher");
         web.addJavascriptInterface(nativeVoice, "RememberMicrophone");
         WebSettings settings = web.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -93,6 +94,7 @@ public final class PreviewActivity extends Activity {
                     path.endsWith(".js") ? "application/javascript" :
                     path.endsWith(".css") ? "text/css" :
                     path.endsWith(".png") ? "image/png" :
+                    path.endsWith(".svg") ? "image/svg+xml" :
                     path.endsWith(".woff2") ? "font/woff2" :
                     path.endsWith(".woff") ? "font/woff" :
                     path.endsWith(".ttf") ? "font/ttf" : "application/octet-stream";

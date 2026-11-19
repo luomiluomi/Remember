@@ -32,8 +32,8 @@
   box-sizing: border-box;
   padding: 10px 16px;
   border-radius: 22px;
-  font-size: 16px;
-  line-height: 24px;
+  font-size: var(--memory-chat-font-size, 16px);
+  line-height: 1.65;
   color: var(--dsw-alias-label-primary);
   background-color: var(--dsw-specific-bubble);
   white-space: pre-wrap;

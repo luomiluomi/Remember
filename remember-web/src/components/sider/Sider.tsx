@@ -1,7 +1,12 @@
 import clsx from 'clsx'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslate } from '../../i18n/index.js'
-import { IconPanelLeftOutline16, IconSettingsOutline16, NewChatIcon } from '../base/icons.js'
+import {
+  IconChevronDownOutline14,
+  IconPanelLeftOutline16,
+  IconSettingsOutline16,
+  NewChatIcon,
+} from '../base/icons.js'
 import { setSiderCollapsed } from '../../services/settings.js'
 import { groupSessions } from '../../services/chat/sessionGroups.js'
 import { newChat, removeSession, useChatStore } from '../../services/chat/store.js'
@@ -20,6 +25,7 @@ export const Sider = ({ mobile = false }: { mobile?: boolean }) => {
   const t = useTranslate()
   const sessions = useChatStore((state) => state.sessions)
   const [search, setSearch] = useState('')
+  const [olderExpanded, setOlderExpanded] = useState(false)
   const activeId = useChatStore((state) => state.activeId)
   const [now, setNow] = useState(Date.now)
   const groups = useMemo(
@@ -34,6 +40,9 @@ export const Sider = ({ mobile = false }: { mobile?: boolean }) => {
     [sessions, now, t, search]
   )
   const [deleting, setDeleting] = useState<SessionSummary | null>(null)
+  const recent = groups.filter((group) => group.key.startsWith('sessionHistoryTimeline'))
+  const older = groups.filter((group) => !group.key.startsWith('sessionHistoryTimeline'))
+  const showOlder = Boolean(search.trim()) || olderExpanded
   const [deletePending, setDeletePending] = useState(false)
 
   useEffect(() => {
@@ -94,7 +103,7 @@ export const Sider = ({ mobile = false }: { mobile?: boolean }) => {
       />
       <div className={styles.listWrap}>
         <div className={styles.list}>
-          {groups.map((group) => (
+          {recent.map((group) => (
             <div key={group.key} className={styles.section}>
               <div className={styles.sectionHeader}>{group.label}</div>
               {group.sessions.map((session) => (
@@ -107,6 +116,35 @@ export const Sider = ({ mobile = false }: { mobile?: boolean }) => {
               ))}
             </div>
           ))}
+          {older.length > 0 && (
+            <div className={styles.section}>
+              <button
+                type="button"
+                className="memory-older-history"
+                aria-expanded={showOlder}
+                disabled={Boolean(search.trim())}
+                onClick={() => setOlderExpanded((value) => !value)}
+              >
+                <span>{t('historyOlderTitle')}</span>
+                <small>{older.reduce((count, group) => count + group.sessions.length, 0)}</small>
+                <IconChevronDownOutline14 />
+              </button>
+              {showOlder &&
+                older.map((group) => (
+                  <div key={group.key} className={styles.section}>
+                    <div className={styles.sectionHeader}>{group.label}</div>
+                    {group.sessions.map((session) => (
+                      <SessionItem
+                        key={session.id}
+                        session={session}
+                        active={session.id === activeId}
+                        onDelete={() => setDeleting(session)}
+                      />
+                    ))}
+                  </div>
+                ))}
+            </div>
+          )}
         </div>
       </div>
       <div className={styles.bottom}>

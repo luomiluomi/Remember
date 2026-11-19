@@ -48,11 +48,11 @@ export const Modal = ({
         onCloseRef.current()
       }
     }
-    window.addEventListener('remember-back', onBack)
+    window.addEventListener('remember-back', onBack, true)
     return () => {
       openModals.splice(openModals.indexOf(token), 1)
       document.removeEventListener('keydown', onKeyDown)
-      window.removeEventListener('remember-back', onBack)
+      window.removeEventListener('remember-back', onBack, true)
     }
   }, [])
 

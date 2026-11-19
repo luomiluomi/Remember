@@ -1,3 +1,6 @@
+import { appVersion } from '../session/AboutPage.js'
+import { setEnterToSend } from '../../services/settings.js'
+import { ChatTextSetting, LauncherAppearanceSetting } from './PersonalizationSetting.js'
 import { ProfileSetting } from '../session/ProfileSetting.js'
 import clsx from 'clsx'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
@@ -75,7 +78,7 @@ const SettingsContent = () => {
       <Modal
         title={t('settings')}
         closable
-        className={styles.dialog}
+        className={clsx(styles.dialog, 'memory-settings-page')}
         mainClassName={styles.dialogMain}
         onClose={() => {
           if (!historyDelete.busy && !historyImport.busy) {
@@ -102,50 +105,59 @@ const SettingsContent = () => {
           {section === 'general' ? (
             <>
               <ProfileSetting />
-              <BalanceSetting key={apiKeyEditor.apiKey ?? ''} apiKey={apiKeyEditor.apiKey} />
-              <ThemeSetting />
-              <LocaleSetting />
-              <TtsVoiceSetting />
-              <LocationSetting />
-              <SettingCell
-                label="关于记得"
-                description="版本、工作室与开源说明"
-                status={null}
-                action={
-                  <Button
-                    variant="outlined"
-                    size="m"
-                    onClick={() => {
-                      closeSettings()
-                      window.dispatchEvent(new CustomEvent('remember-panel', { detail: 'about' }))
-                    }}
-                  >
-                    查看
-                  </Button>
-                }
-              />
+              <SettingsGroup title="外观与阅读">
+                <ThemeSetting />
+                <ChatTextSetting />
+                <LauncherAppearanceSetting />
+              </SettingsGroup>
+              <SettingsGroup title="对话偏好">
+                <EnterKeySetting />
+                <LocaleSetting />
+                <TtsVoiceSetting />
+                <LocationSetting />
+              </SettingsGroup>
+              <SettingsGroup title="账户与用量">
+                <BalanceSetting key={apiKeyEditor.apiKey ?? ''} apiKey={apiKeyEditor.apiKey} />
+                <details className="remember-api-note">
+                  <summary>额外 API 用量</summary>
+                  <p>
+                    自动记忆整理、维度检索、长对话压缩，以及语音识别与朗读，都会调用 DeepSeek
+                    并可能使用账户额度。
+                  </p>
+                  <p>
+                    自动记忆可在角色设置中关闭；长对话整理开始时会显示提示。更换音色和本地编辑不会发起生成请求。
+                  </p>
+                </details>
+              </SettingsGroup>
+              <SettingsGroup title="关于应用">
+                <SettingsLink label="版本更新记录" detail={appVersion} page="versions" />
+                <SettingsLink label="关于记得" detail="工作室与开源说明" page="about" />
+              </SettingsGroup>
             </>
           ) : (
             <>
-              <ApiKeyField editor={apiKeyEditor} />
-              <BalanceSetting key={apiKeyEditor.apiKey ?? ''} apiKey={apiKeyEditor.apiKey} />
-              <ImportHistory historyImport={historyImport} disabled={historyBusy} />
-              <ExportHistory disabled={historyBusy} />
-              <SettingCell
-                label={t('deleteAllSessions')}
-                status={null}
-                action={
-                  <Button
-                    variant="dangerOutlined"
-                    size="m"
-                    className={styles.cellButton}
-                    disabled={historyBusy}
-                    onClick={historyDelete.open}
-                  >
-                    {t('delete')}
-                  </Button>
-                }
-              />
+              <SettingsGroup title="API 连接">
+                <ApiKeyField editor={apiKeyEditor} />
+              </SettingsGroup>
+              <SettingsGroup title="聊天记录">
+                <ImportHistory historyImport={historyImport} disabled={historyBusy} />
+                <ExportHistory disabled={historyBusy} />
+                <SettingCell
+                  label={t('deleteAllSessions')}
+                  status={null}
+                  action={
+                    <Button
+                      variant="dangerOutlined"
+                      size="m"
+                      className={styles.cellButton}
+                      disabled={historyBusy}
+                      onClick={historyDelete.open}
+                    >
+                      {t('delete')}
+                    </Button>
+                  }
+                />
+              </SettingsGroup>
               {isMobile ? <ApiKeyConfirm editor={apiKeyEditor} /> : null}
             </>
           )}
@@ -399,7 +411,7 @@ const ThemeSetting = () => {
     <details className={styles.theme}>
       <summary className="remember-appearance-summary">
         <span>{locale === 'zh-CN' ? '外观与配色' : 'Appearance'}</span>
-        <span>{palettes[palette].label[locale === 'zh-CN' ? 0 : 1]} ›</span>
+        <span>{palettes[palette].label[locale === 'zh-CN' ? 0 : 1]}</span>
       </summary>
       <div className="remember-palette-label">
         {locale === 'zh-CN' ? '配色方案' : 'Color palette'}
@@ -480,7 +492,7 @@ const SettingCell = ({
 }) => {
   const t = useTranslate()
   return (
-    <div className={clsx(styles.cell, styles.row, className)}>
+    <div className={clsx(styles.cell, styles.row, className, 'memory-setting-cell')}>
       <div className={styles.text}>
         <div className={styles.label}>{label}</div>
         {status || description ? (
@@ -732,3 +744,54 @@ const ExportHistory = ({ disabled }: { disabled: boolean }) => {
     />
   )
 }
+
+const EnterKeySetting = () => {
+  const enterToSend = useSettings((state) => state.enterToSend)
+  return (
+    <SettingCell
+      label="回车键发送"
+      description={enterToSend ? 'Enter 发送，Shift + Enter 换行' : 'Enter 换行，点击发送按钮发送'}
+      status={null}
+      action={
+        <button
+          type="button"
+          className="remember-switch"
+          role="switch"
+          aria-label="回车键发送"
+          aria-checked={enterToSend}
+          onClick={() => setEnterToSend(!enterToSend)}
+        >
+          <span />
+        </button>
+      }
+    />
+  )
+}
+
+const SettingsGroup = ({ title, children }: { title: string; children: ReactNode }) => (
+  <section className="memory-settings-group" aria-label={title}>
+    <h3>{title}</h3>
+    <div className="memory-settings-surface">{children}</div>
+  </section>
+)
+const SettingsLink = ({
+  label,
+  detail,
+  page,
+}: {
+  label: string
+  detail: string
+  page: 'about' | 'versions'
+}) => (
+  <button
+    type="button"
+    className="memory-settings-link"
+    onClick={() => {
+      closeSettings()
+      window.dispatchEvent(new CustomEvent('remember-panel', { detail: page }))
+    }}
+  >
+    <span>{label}</span>
+    <small>{detail}</small>
+  </button>
+)

@@ -98,3 +98,40 @@
     background: var(--dsw-alias-interactive-bg-hover);
   }
 }
+.trigger {
+  background: var(--fw-surface);
+  color: var(--fw-ink);
+  border: 1px solid var(--fw-border);
+  border-radius: 10px;
+  min-height: 40px;
+}
+.trigger:hover:not(:disabled) {
+  background: var(--fw-accentSoft);
+}
+.arrow {
+  color: var(--fw-inkMuted);
+  opacity: 0.65;
+}
+.menu {
+  border-color: var(--fw-border);
+  background: var(--fw-surface);
+  box-shadow: 0 8px 28px #0002;
+  padding: 6px;
+}
+.option {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--fw-ink);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  min-height: 44px;
+}
+.option:hover,
+.option:focus-visible,
+.option[aria-selected='true'] {
+  background: var(--fw-accentSoft);
+  color: var(--fw-accent);
+  outline: none;
+}

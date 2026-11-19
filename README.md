@@ -2,7 +2,7 @@
 
 以角色和记忆为核心的陪伴型 AI 聊天工具。无需自建后端，使用自己的 DeepSeek API Key，直接连接官方 API。
 
-**听岚工作室·吟游诗人洛米鸡** · 当前版本 **0.3.17-preview** · [MIT 许可证](LICENSE)
+**听岚工作室·吟游诗人洛米鸡** · 当前版本 **0.3.18-preview** · [MIT 许可证](LICENSE)
 
 ![听岚工作室](remember-web/src/app/tinglan-studio.png)
 

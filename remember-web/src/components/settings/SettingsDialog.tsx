@@ -1,5 +1,5 @@
 import { appVersion } from '../session/AboutPage.js'
-import { setEnterToSend } from '../../services/settings.js'
+import { setContextRecentMessages, setContextCompression, setCompressionThreshold, setEnterToSend } from '../../services/settings.js'
 import { ChatTextSetting, LauncherAppearanceSetting } from './PersonalizationSetting.js'
 import { ProfileSetting } from '../session/ProfileSetting.js'
 import clsx from 'clsx'
@@ -112,6 +112,7 @@ const SettingsContent = () => {
               </SettingsGroup>
               <SettingsGroup title="对话偏好">
                 <EnterKeySetting />
+                <ContextCompressionSetting />
                 <LocaleSetting />
                 <TtsVoiceSetting />
                 <LocationSetting />
@@ -742,6 +743,89 @@ const ExportHistory = ({ disabled }: { disabled: boolean }) => {
         </Button>
       }
     />
+  )
+}
+
+const compressionPresets = [
+  { value: 64000, label: '轻量', detail: '64K' },
+  { value: 128000, label: '适中', detail: '128K' },
+  { value: 256000, label: '均衡', detail: '256K · 默认' },
+  { value: 512000, label: '长聊', detail: '512K' },
+]
+
+const ContextCompressionSetting = () => {
+  const enabled = useSettings((state) => state.contextCompression)
+  const threshold = useSettings((state) => state.contextCompressionThreshold)
+  const recentMessages = useSettings((state) => state.contextRecentMessages)
+  const [custom, setCustom] = useState(() => !compressionPresets.some((item) => item.value === threshold))
+  const [draft, setDraft] = useState(() => String(threshold / 1000))
+  const customValid = /^\d+$/.test(draft) && Number(draft) >= 32 && Number(draft) <= 800
+  return (
+    <>
+      <SettingCell
+        label="自动压缩上下文"
+        description="达到阈值时整理早期内容，保留原始记录。整理会调用 API 并消耗额度。"
+        status={null}
+        action={<button type="button" className="remember-switch" role="switch"
+          aria-label="自动压缩上下文" aria-checked={enabled}
+          onClick={() => setContextCompression(!enabled)}><span /></button>}
+      />
+      <SettingCell
+        className={styles.compressionCell}
+        label="保留最近消息"
+        description="用户与 AI 发言各计一条，32 条约为 16 轮。范围 8–200 条；不足时不压缩。"
+        status={null}
+        action={<label className={styles.compressionRange}>
+          <output>{recentMessages} 条消息</output>
+          <input type="range" aria-label="保留最近消息" min={8} max={200}
+            step={2} value={recentMessages} disabled={!enabled}
+            onChange={(event) => setContextRecentMessages(Number(event.target.value))} />
+        </label>}
+      />
+      <SettingCell
+        className={styles.compressionCell}
+        label="压缩触发阈值"
+        description="选择整理早期内容的时机。按 tokens 估算；为回复和记忆预留空间，含工具调用时暂不压缩。"
+        status={null}
+        action={<div className={styles.compressionControl}>
+          <div className={styles.compressionPresets} role="group" aria-label="压缩阈值档位">
+            {compressionPresets.map((preset) => (
+              <button key={preset.value} type="button" disabled={!enabled}
+                aria-pressed={!custom && threshold === preset.value}
+                onClick={() => {
+                  setCustom(false)
+                  setDraft(String(preset.value / 1000))
+                  setCompressionThreshold(preset.value)
+                }}>
+                <strong>{preset.label}</strong><small>{preset.detail}</small>
+              </button>
+            ))}
+            <button type="button" disabled={!enabled} aria-pressed={custom}
+              onClick={() => { setCustom(true); setDraft(String(threshold / 1000)) }}>
+              <strong>自定义</strong><small>自行设定</small>
+            </button>
+          </div>
+          {custom && <div className={styles.compressionCustom}>
+            <label>
+              <span>触发阈值</span>
+              <input type="number" inputMode="numeric" min={32} max={800} step={1}
+                aria-label="自定义压缩阈值（K tokens）" disabled={!enabled} value={draft}
+                onChange={(event) => setDraft(event.target.value)} />
+              <span>K tokens</span>
+            </label>
+            <Button variant="outlined" size="m" disabled={!enabled || !customValid}
+              onClick={() => {
+                setCompressionThreshold(Number(draft) * 1000)
+                showToast('压缩阈值已保存')
+              }}>保存</Button>
+          </div>}
+          <small aria-live="polite">
+            {custom && !customValid ? '请输入 32–800 之间的整数。' :
+              '当前生效：' + Math.round(threshold / 1000) + 'K tokens（估算）'}
+          </small>
+        </div>}
+      />
+    </>
   )
 }
 

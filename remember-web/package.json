@@ -1,6 +1,6 @@
 {
   "name": "remember-web",
-  "version": "0.3.17-preview",
+  "version": "0.3.18-preview",
   "description": "记得 Memory：基于 DeepSeek chat-demo 重构的角色与记忆聊天工具。",
   "author": "听岚工作室·吟游诗人洛米鸡",
   "repository": { "type": "git", "url": "https://github.com/luomiluomi/Remember.git" },

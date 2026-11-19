@@ -549,3 +549,66 @@
     margin-bottom: 0;
   }
 }
+
+.compressionControl {
+  width: 100%;
+  display: grid;
+  gap: 12px;
+  color: var(--remember-ink);
+}
+.compressionControl > small { opacity: .65; line-height: 1.5; }
+.compressionPresets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 8px;
+}
+.compressionPresets button {
+  display: grid;
+  gap: 5px;
+  padding: 12px 8px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: var(--remember-tint);
+  color: var(--remember-ink);
+  cursor: pointer;
+}
+.compressionPresets strong { font-size: 13px; font-weight: 500; }
+.compressionPresets small { font-size: 11px; opacity: .65; }
+.compressionPresets button[aria-pressed='true'] {
+  border-color: currentColor;
+  background: var(--remember-surface);
+}
+.compressionPresets button:disabled { opacity: .4; cursor: default; }
+.compressionCustom { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.compressionCustom label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.compressionCustom input {
+  width: 76px;
+  min-height: 40px;
+  box-sizing: border-box;
+  border: 1px solid currentColor;
+  border-radius: 10px;
+  background: var(--remember-paper);
+  color: var(--remember-ink);
+  padding: 8px;
+  font: inherit;
+}
+
+.cell.compressionCell {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+}
+.compressionCell .text { width: 100%; padding-right: 0; min-width: 0; }
+.compressionCell .label { white-space: normal; }
+.compressionRange { display: grid; gap: 12px; width: 100%; }
+.compressionRange output { font-size: 13px; color: var(--remember-muted); }
+.compressionRange input { width: 100%; margin: 0; accent-color: var(--remember-accent); }
+.compressionPresets { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.compressionPresets button { min-width: 0; padding: 12px 4px; }
+.compressionPresets button:last-child { grid-column: 1 / -1; padding: 10px; display: flex; justify-content: center; gap: 8px; }
+.compressionPresets button[aria-pressed='true'] { color: var(--remember-accent); border-color: var(--remember-accent); background: var(--remember-tint); }

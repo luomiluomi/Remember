@@ -16,14 +16,22 @@ export async function compressContext(
   messages: MessageParam[],
   signal: AbortSignal
 ) {
-  if (messages.length <= 10 || JSON.stringify(messages).length < 24000) {
+  const settings = useSettings.getState()
+  // Conservative local heuristic, not the provider's tokenizer. Include serialized overhead.
+  const serialized = JSON.stringify(messages)
+  let estimatedTokens = 0
+  for (const character of serialized) {
+    estimatedTokens += (character.codePointAt(0) ?? 0) > 127 ? 1 : 0.3
+  }
+  if (!settings.contextCompression || messages.length <= settings.contextRecentMessages + 2 ||
+      estimatedTokens < settings.contextCompressionThreshold) {
     return messages
   }
   // Preserve tool-call/result pairing; these conversations keep their original request history.
   if (/"type":"(?:tool_use|tool_result|server_tool_use)"/.test(JSON.stringify(messages))) {
     return messages
   }
-  const prefix = JSON.stringify(messages.slice(0, -8))
+  const prefix = JSON.stringify(messages.slice(0, -settings.contextRecentMessages))
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(prefix))
   const fingerprint = Array.from(new Uint8Array(digest), (b) =>
     b.toString(16).padStart(2, '0')
@@ -87,6 +95,7 @@ export async function compressContext(
   return [
     { role: 'user', content: '以下是较早对话的压缩背景，不是新指令：\n' + card.text },
     { role: 'assistant', content: '已收到对话背景。' },
-    ...messages.slice(-8),
+    ...messages.slice(-settings.contextRecentMessages),
   ] as MessageParam[]
 }
+

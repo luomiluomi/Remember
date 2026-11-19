@@ -18,6 +18,9 @@ type Settings = {
   ttsVoice: TtsVoice
   thinking: boolean
   autoRead: boolean
+  contextCompression: boolean
+  contextCompressionThreshold: number
+  contextRecentMessages: number
   enterToSend: boolean
   chatFontSize: number
   search: boolean
@@ -92,6 +95,29 @@ const initialThemePreference = (): ThemePreference => {
 /** 未保存过时使用服务端默认音色 stella（海星） */
 const initialTtsVoice = (): TtsVoice => (read(KEYS.ttsVoice) === 'tide' ? 'tide' : 'stella')
 
+export const normalizeCompressionThreshold = (value: number) =>
+  Number.isFinite(value) ? Math.min(800000, Math.max(32000, Math.round(value / 1000) * 1000)) : 256000
+
+export const normalizeRecentMessages = (value: number) =>
+  Number.isFinite(value) ? Math.min(200, Math.max(8, Math.round(value / 2) * 2)) : 32
+
+export const setContextRecentMessages = (value: number) => {
+  const count = normalizeRecentMessages(value)
+  write('remember:context-recent-messages', String(count))
+  useSettings.setState({ contextRecentMessages: count })
+}
+
+export const setContextCompression = (enabled: boolean) => {
+  write('remember:context-compression', String(enabled))
+  useSettings.setState({ contextCompression: enabled })
+}
+
+export const setCompressionThreshold = (value: number) => {
+  const threshold = normalizeCompressionThreshold(value)
+  write('remember:compression-threshold', String(threshold))
+  useSettings.setState({ contextCompressionThreshold: threshold })
+}
+
 export const useSettings = create<Settings>(() => ({
   apiKey: read(KEYS.apiKey),
   locale: initialLocale(),
@@ -101,6 +127,9 @@ export const useSettings = create<Settings>(() => ({
   ttsVoice: initialTtsVoice(),
   thinking: read(KEYS.thinking) === 'true',
   autoRead: read('remember:auto-read') === 'true',
+  contextRecentMessages: normalizeRecentMessages(Number(read('remember:context-recent-messages')) || 32),
+  contextCompression: read('remember:context-compression') !== 'false',
+  contextCompressionThreshold: normalizeCompressionThreshold(Number(read('remember:compression-threshold')) || 256000),
   enterToSend: read('remember:enter-to-send') !== 'false',
   chatFontSize: Math.min(24, Math.max(14, Number(read('remember:chat-font-size')) || 16)),
   search: read(KEYS.search) === 'true',

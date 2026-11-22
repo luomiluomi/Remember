@@ -17,6 +17,7 @@ public final class PreviewActivity extends Activity {
     private static final String HOME = "https://" + HOST + "/index.html";
     private WebView web;
     private NativeVoice nativeVoice;
+    private NativeExport nativeExport;
     private String screenConfig;
     private PermissionRequest microphone;
     private ValueCallback<Uri[]> chooser;
@@ -95,6 +96,8 @@ public final class PreviewActivity extends Activity {
                 }
             }
         }, "MemoryScreen");
+        nativeExport = new NativeExport(this, web);
+        web.addJavascriptInterface(nativeExport, "MemoryExport");
         nativeVoice = new NativeVoice(this);
         web.addJavascriptInterface(new NativeLauncher(this), "MemoryLauncher");
         web.addJavascriptInterface(nativeVoice, "RememberMicrophone");
@@ -227,6 +230,7 @@ public final class PreviewActivity extends Activity {
 
     @Override protected void onActivityResult(int request, int result, Intent intent) {
         super.onActivityResult(request, result, intent);
+        if (request == 72) { nativeExport.result(result, intent); }
         if (request == 71) {
             if (result == RESULT_OK && intent != null && screenConfig != null) {
                 ScreenCompanionService.configuration = screenConfig;

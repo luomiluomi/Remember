@@ -1,3 +1,4 @@
+import { saveArchive } from '../../services/chat/saveArchive.js'
 import { ScreenCompanionSetting } from './ScreenCompanionSetting.js'
 import { appVersion } from '../session/AboutPage.js'
 import { setContextRecentMessages, setContextCompression, setCompressionThreshold, setEnterToSend } from '../../services/settings.js'
@@ -712,14 +713,11 @@ const ExportHistory = ({ disabled }: { disabled: boolean }) => {
   const onExport = async () => {
     setBusy(true)
     setStatus(null)
+    showToast('正在生成导出文件…')
     try {
       const { name, blob } = await exportHistory()
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = name
-      link.click()
-      setTimeout(() => URL.revokeObjectURL(url), 10_000)
+      const result = await saveArchive(name, blob)
+      showToast(result === 'saved' ? '聊天记录已保存' : result === 'cancel' ? '已取消保存' : '已发起下载，请检查浏览器下载列表')
     } catch (error) {
       setStatus(errorStatus('historyExportFailed', error))
     } finally {
@@ -741,7 +739,7 @@ const ExportHistory = ({ disabled }: { disabled: boolean }) => {
           onClick={() => void onExport()}
         >
           <IconDownloadOutline16 />
-          {t('exportAllDownload')}
+          {busy ? '正在导出…' : t('exportAllDownload')}
         </Button>
       }
     />

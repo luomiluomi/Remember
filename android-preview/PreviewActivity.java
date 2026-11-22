@@ -17,6 +17,7 @@ public final class PreviewActivity extends Activity {
     private static final String HOME = "https://" + HOST + "/index.html";
     private WebView web;
     private NativeVoice nativeVoice;
+    private String screenConfig;
     private PermissionRequest microphone;
     private ValueCallback<Uri[]> chooser;
 
@@ -61,6 +62,39 @@ public final class PreviewActivity extends Activity {
                 });
             }
         }, "RememberWindow");
+        web.addJavascriptInterface(new Object() {
+            @JavascriptInterface public void start(String json) {
+                runOnUiThread(() -> {
+                    if (!android.provider.Settings.canDrawOverlays(PreviewActivity.this)) {
+                        startActivity(new Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                            Uri.parse("package:" + getPackageName())));
+                        android.widget.Toast.makeText(PreviewActivity.this,"请允许悬浮窗后返回，再点击开始",android.widget.Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    stopService(new Intent(PreviewActivity.this, ScreenCompanionService.class));
+                    screenConfig = json;
+                    startActivityForResult(((android.media.projection.MediaProjectionManager)getSystemService(MEDIA_PROJECTION_SERVICE))
+                        .createScreenCaptureIntent(), 71);
+                });
+            }
+            @JavascriptInterface public void stop() {
+                runOnUiThread(() -> stopService(new Intent(PreviewActivity.this, ScreenCompanionService.class)));
+            }
+            @JavascriptInterface public String pending() {
+                synchronized(ScreenCompanionService.events) { return ScreenCompanionService.events.isEmpty() ? getSharedPreferences("screen-pending",0).getString("events","[]") : "["+android.text.TextUtils.join(",",ScreenCompanionService.events)+"]"; }
+            }
+            @JavascriptInterface public void acknowledge(String id) {
+                synchronized(ScreenCompanionService.events) {
+                    if(ScreenCompanionService.events.isEmpty()) {
+                        try { org.json.JSONArray saved=new org.json.JSONArray(getSharedPreferences("screen-pending",0).getString("events","[]"));
+                            for(int i=0;i<saved.length();i++)ScreenCompanionService.events.add(saved.getJSONObject(i).toString());
+                        } catch(Exception ignored){}
+                    }
+                    ScreenCompanionService.events.removeIf(e -> {try{return new org.json.JSONObject(e).getString("id").equals(id);}catch(Exception ex){return false;}});
+                    getSharedPreferences("screen-pending",0).edit().putString("events","["+android.text.TextUtils.join(",",ScreenCompanionService.events)+"]").commit();
+                }
+            }
+        }, "MemoryScreen");
         nativeVoice = new NativeVoice(this);
         web.addJavascriptInterface(new NativeLauncher(this), "MemoryLauncher");
         web.addJavascriptInterface(nativeVoice, "RememberMicrophone");
@@ -193,6 +227,13 @@ public final class PreviewActivity extends Activity {
 
     @Override protected void onActivityResult(int request, int result, Intent intent) {
         super.onActivityResult(request, result, intent);
+        if (request == 71) {
+            if (result == RESULT_OK && intent != null && screenConfig != null) {
+                ScreenCompanionService.configuration = screenConfig;
+                startForegroundService(new Intent(this, ScreenCompanionService.class).putExtra("grant",intent));
+            }
+            screenConfig = null;
+        }
         if (request == 2 && chooser != null) {
             ValueCallback<Uri[]> callback = chooser;
             chooser = null;
@@ -208,3 +249,4 @@ public final class PreviewActivity extends Activity {
         super.onDestroy();
     }
 }
+

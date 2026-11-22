@@ -1,3 +1,4 @@
+import { ScreenCompanionLaunch } from '../settings/ScreenCompanionSetting.js'
 import { VersionHistoryPage } from './VersionHistoryPage.js'
 import { RoleEditorFields } from './RoleEditorFields.js'
 import { MemoryDetail } from './MemoryDetail.js'
@@ -134,6 +135,7 @@ export function CompanionPanel({
         {roleId ? current.name : t('appName')}
       </strong>
       <div className="remember-header-actions">
+        <ScreenCompanionLaunch />
         <button
           type="button"
           className="remember-read"

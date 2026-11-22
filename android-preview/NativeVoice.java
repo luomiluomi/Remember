@@ -15,7 +15,7 @@ import java.nio.ByteOrder;
 public final class NativeVoice {
     private static final int RATE = 16000;
     private static final int MAX_BYTES = RATE * 2 * 120;
-    private final Activity activity;
+    private final android.content.Context activity;
     private AudioRecord recorder;
     private Thread worker;
     private ByteArrayOutputStream pcm;
@@ -23,14 +23,16 @@ public final class NativeVoice {
     private volatile boolean failed;
     private volatile double level;
 
-    NativeVoice(Activity activity) {
+    NativeVoice(android.content.Context activity) {
         this.activity = activity;
     }
 
     @JavascriptInterface public synchronized String start() {
         if (activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            activity.runOnUiThread(() -> activity.requestPermissions(
+            if(activity instanceof Activity) {
+                Activity host=(Activity)activity;host.runOnUiThread(() -> host.requestPermissions(
                 new String[] { Manifest.permission.RECORD_AUDIO }, 3));
+            }
             return "permission";
         }
         finish(false);

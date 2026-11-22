@@ -103,7 +103,7 @@ export function DistillPage() {
       }
       setResult((cancel.current ? '已停止。' : '提炼完成。') + '新增 ' + count + ' 张记忆卡。')
     } catch (error) {
-      setResult(error instanceof Error ? error.message : '提炼失败。')
+      setResult((error instanceof Error ? error.message : '提炼失败。') + '\n已完成 ' + processed + ' / ' + chunks.length + ' 段；已生成的记忆保留，重试将从未完成段继续。')
     } finally {
       setBusy(false)
     }

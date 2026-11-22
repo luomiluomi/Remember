@@ -2,7 +2,7 @@ import { useProfile } from '../../components/session/ProfileSetting.js'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { createId } from '../../utils/id.js'
-import { streamMessage } from '../api/client.js'
+import { ApiError, streamMessage } from '../api/client.js'
 import { useSettings } from '../settings.js'
 
 export const categories = [
@@ -127,11 +127,11 @@ export function draftMemories(
   messageId: string
 ) {
   const id = getRole(roleId).id
-  const task = (queues.get(id) ?? Promise.resolve()).then(() =>
+  const task = (queues.get(id) ?? Promise.resolve()).catch(() => {}).then(() =>
     extractMemories(id, text, sessionId, messageId)
   )
   queues.set(id, task)
-  void task.finally(() => {
+  void task.catch(() => {}).finally(() => {
     if (queues.get(id) === task) {
       queues.delete(id)
     }
@@ -160,6 +160,7 @@ export async function extractMemories(
   try {
     let result = ''
     let completed = false
+    let stopReason = ''
     for await (const event of streamMessage(
       apiKey,
       {
@@ -184,7 +185,7 @@ export async function extractMemories(
         tools: [],
         safety_check: { level: 'high' },
       },
-      AbortSignal.timeout(20000)
+      AbortSignal.timeout(60000)
     )) {
       if (event.type === 'content_block_start' && event.content_block.type === 'text') {
         result += event.content_block.text
@@ -193,14 +194,21 @@ export async function extractMemories(
         result += event.delta.text
       }
       if (event.type === 'message_delta') {
-        completed = event.delta.stop_reason === 'end_turn'
+        if (event.delta.stop_reason) { stopReason = event.delta.stop_reason }
+        completed = stopReason === 'end_turn'
       }
       if (result.length > 12000) {
-        throw new Error('Memory output exceeded limit')
+        throw new Error('记忆提炼返回内容过长，请稍后重试')
       }
     }
+    if (!completed) {
+      throw new Error(stopReason === 'max_tokens'
+        ? '记忆提炼输出被截断，本段未写入，请重试'
+        : stopReason === 'refusal'
+          ? '模型未能处理这段内容，本段未写入'
+          : '记忆提炼响应未完整结束，请重试')
+    }
     if (
-      !completed ||
       (!manual && !getRole(role.id).auto) ||
       (manual && !manual.allowed()) ||
       useSettings.getState().apiKey !== apiKey ||
@@ -209,7 +217,7 @@ export async function extractMemories(
     ) {
       updateJob('done')
       if (manual) {
-        throw new Error('Memory extraction was not committed')
+        throw new Error('提炼期间角色记忆、API 设置或任务状态发生变化，本段未写入，请重试')
       }
       return
     }
@@ -217,7 +225,7 @@ export async function extractMemories(
       result.trim().replace(/^\x60{3}(?:json)?\s*|\s*\x60{3}$/gi, '')
     )
     if (!Array.isArray(values)) {
-      throw new Error('Invalid memory extraction')
+      throw new Error('模型返回的记忆格式不正确，本段未写入，请重试')
     }
     useCompanion.setState(({ cards }) => {
       const updated = [...cards]
@@ -277,10 +285,24 @@ export async function extractMemories(
       return { cards: updated }
     })
     updateJob('done')
-  } catch {
+  } catch (error) {
     updateJob('error')
     if (manual) {
-      throw new Error('Memory extraction failed')
+      if (error instanceof ApiError) {
+        const reason = error.status === 401 ? 'API Key 无效，请检查设置'
+          : error.status === 402 ? '账户余额不足，请检查 API 额度'
+          : error.status === 429 ? '请求频率受限，请稍后重试'
+          : error.status && error.status >= 500 ? 'DeepSeek 服务暂时异常，请稍后重试'
+          : '网络或 API 请求失败，请检查连接后重试'
+        throw new Error('记忆提炼失败：' + reason)
+      }
+      if (error instanceof DOMException && ['TimeoutError', 'AbortError'].includes(error.name)) {
+        throw new Error('记忆提炼超时或已取消，本段未写入，请稍后重试')
+      }
+      if (error instanceof SyntaxError) {
+        throw new Error('模型返回的 JSON 格式不完整，本段未写入，请重试')
+      }
+      throw error instanceof Error ? error : new Error('记忆提炼失败，请稍后重试')
     }
     // Optional memory extraction must not interrupt chat.
   }

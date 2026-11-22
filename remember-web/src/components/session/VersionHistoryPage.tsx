@@ -2,6 +2,10 @@ import { appVersion } from './AboutPage.js'
 
 const updates = [
   {
+    version: '0.4.0-preview', date: '2026-11-22', title: '屏幕陪伴，按需开启',
+    items: ['合并屏幕陪伴，默认关闭，从具体对话启动。', '圆形头像、气泡、小窗文字与语音输入，支持暂停和安静陪伴。', '修复顶部操作越界和记忆提炼错误提示。'],
+  },
+  {
     version: '0.3.18-preview',
     date: '2026-11-19',
     title: '让长对话的节奏由你掌握',

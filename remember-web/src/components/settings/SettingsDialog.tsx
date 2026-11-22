@@ -1,3 +1,4 @@
+import { ScreenCompanionSetting } from './ScreenCompanionSetting.js'
 import { appVersion } from '../session/AboutPage.js'
 import { setContextRecentMessages, setContextCompression, setCompressionThreshold, setEnterToSend } from '../../services/settings.js'
 import { ChatTextSetting, LauncherAppearanceSetting } from './PersonalizationSetting.js'
@@ -117,6 +118,7 @@ const SettingsContent = () => {
                 <TtsVoiceSetting />
                 <LocationSetting />
               </SettingsGroup>
+              <ScreenCompanionSetting />
               <SettingsGroup title="账户与用量">
                 <BalanceSetting key={apiKeyEditor.apiKey ?? ''} apiKey={apiKeyEditor.apiKey} />
                 <details className="remember-api-note">

@@ -455,7 +455,7 @@ body[data-ds-dark-theme] {
 }
 
 .remember-toolbar {
-  grid-template-columns: 44px minmax(0, 1fr) 88px;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
   padding-top: var(--native-top, 0px);
 }
 .remember-header-actions {
@@ -1735,4 +1735,14 @@ body[data-ds-dark-theme] {
 .memory-launcher-presets strong {
   font-size: 14px;
   font-weight: 500;
+}
+
+/* Action width follows visible controls; the title yields space on narrow screens. */
+.remember-toolbar { box-sizing: border-box; min-width: 0; }
+.remember-toolbar > .remember-title { min-width: 0; padding-inline: 6px; }
+.remember-header-actions { justify-self: end; flex-wrap: nowrap; gap: 2px; min-width: 0; }
+.remember-header-actions > button { box-sizing: border-box; flex: 0 0 40px; width: 40px; height: 44px; padding: 0; }
+@media (max-width: 359px) {
+  .remember-header-actions { gap: 0; }
+  .remember-header-actions > button { flex-basis: 36px; width: 36px; }
 }

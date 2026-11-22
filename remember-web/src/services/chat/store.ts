@@ -1141,3 +1141,27 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
     }
   }
 }
+
+/** Import companion text once; screenshots are never written to chat storage. */
+export const appendScreenCompanionMessage = async (event: {
+  id: string; sessionId: string; role: 'user' | 'assistant'; text: string; createdAt: number
+}) => {
+  const session = getSession(event.sessionId)
+  if (!session || getStreamController(event.sessionId) || get().importingHistory) {
+    return false
+  }
+  if (session.messages.some((message) => message.id === event.id)) {
+    try { await db.saveSession(session); return true } catch { return false }
+  }
+  const message: Message = event.role === 'user'
+    ? { id: event.id, role: 'user', content: event.text, files: [], createdAt: event.createdAt }
+    : { id: event.id, role: 'assistant', blocks: [{ type: 'text', text: event.text }],
+        status: 'done', model: 'deepseek-flash', prefix: false, createdAt: event.createdAt }
+  const parent = getVisibleMessages(session).at(-1)?.id ?? null
+  updateSession(event.sessionId, (current) => ({
+    ...appendBranch(current, parent, [message]), updatedAt: event.createdAt,
+  }))
+  const updated = getSession(event.sessionId)
+  if (!updated) { return false }
+  try { await db.saveSession(updated); return true } catch { return false }
+}

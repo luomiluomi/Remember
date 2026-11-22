@@ -14,7 +14,7 @@ if (!(Test-Path $Keystore)) { throw 'An Android debug keystore is required.' }
 New-Item -ItemType Directory -Force $out | Out-Null
 $stage = Join-Path $out ([Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory "$stage/classes","$stage/dex" | Out-Null
-Run javac @('--release','8','-encoding','UTF-8','-classpath',$jar,'-d',"$stage/classes","$PSScriptRoot/PreviewActivity.java","$PSScriptRoot/NativeVoice.java","$PSScriptRoot/NativeLauncher.java")
+Run javac @('--release','8','-encoding','UTF-8','-classpath',$jar,'-d',"$stage/classes","$PSScriptRoot/PreviewActivity.java","$PSScriptRoot/NativeVoice.java","$PSScriptRoot/NativeLauncher.java","$PSScriptRoot/ScreenCompanionService.java","$PSScriptRoot/CompanionOverlay.java")
 $classes = @(Get-ChildItem "$stage/classes" -Recurse -Filter '*.class' | ForEach-Object FullName)
 Run "$tools/d8.bat" (@('--min-api','26','--lib',$jar,'--output',"$stage/dex") + $classes)
 Run "$tools/aapt2.exe" @('compile','--dir',"$PSScriptRoot/res",'-o',"$stage/resources.zip")
